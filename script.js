@@ -1,5 +1,4 @@
 const yearSlot = document.getElementById("current-year");
-
 if (yearSlot) {
   yearSlot.textContent = new Date().getFullYear();
 }
@@ -10,7 +9,6 @@ async function copyEmail(trigger) {
   const email = trigger.dataset.email;
   const defaultLabel = trigger.dataset.defaultLabel || trigger.textContent.trim();
   const successLabel = trigger.dataset.successLabel || "Copiado";
-
   if (!email) return;
 
   try {
@@ -38,3 +36,28 @@ async function copyEmail(trigger) {
 copyTriggers.forEach((trigger) => {
   trigger.addEventListener("click", () => copyEmail(trigger));
 });
+
+const navToggle = document.querySelector(".nav-toggle");
+if (navToggle) {
+  navToggle.addEventListener("click", () => {
+    const open = document.body.classList.toggle("nav-open");
+    navToggle.setAttribute("aria-expanded", String(open));
+  });
+}
+
+const revealNodes = document.querySelectorAll("[data-reveal]");
+if (revealNodes.length) {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.16,
+    rootMargin: "0px 0px -40px 0px"
+  });
+
+  revealNodes.forEach((node) => observer.observe(node));
+}
