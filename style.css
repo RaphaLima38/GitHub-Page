@@ -373,13 +373,59 @@ small {
   font-size: clamp(1.4rem, 2.4vw, 2rem);
 }
 
-.code-card pre {
+.terminal-card {
+  padding: 1rem;
+  border-radius: calc(var(--radius-lg) - 8px);
+  background: var(--panel-strong);
+  border: 1px solid rgba(135, 189, 255, 0.14);
+}
+
+.mini-terminal {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(6, 14, 28, 0.94), rgba(8, 18, 34, 0.98));
+  border: 1px solid rgba(135, 189, 255, 0.14);
+}
+
+.terminal-dots {
+  display: flex;
+  gap: 0.45rem;
+  margin-bottom: 0.9rem;
+}
+
+.terminal-dots span {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(135, 189, 255, 0.36);
+}
+
+.terminal-dots span:nth-child(1) {
+  background: #79b7ff;
+}
+
+.terminal-dots span:nth-child(2) {
+  background: #4ba3ff;
+}
+
+.terminal-dots span:nth-child(3) {
+  background: #2f76ff;
+}
+
+.terminal-list {
   margin: 0;
-  color: #bfe2ff;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.88rem;
-  line-height: 1.7;
-  white-space: pre-wrap;
+  padding-left: 1.1rem;
+}
+
+.terminal-list li {
+  margin-bottom: 0.45rem;
+  color: #c7defc;
+}
+
+.terminal-list strong {
+  color: var(--text);
 }
 
 .metrics-grid {
