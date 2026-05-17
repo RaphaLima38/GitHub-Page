@@ -37,7 +37,7 @@ copyTriggers.forEach((trigger) => {
   trigger.addEventListener("click", () => copyEmail(trigger));
 });
 
-const navToggle = document.querySelector(".nav-toggle");
+const navToggle = document.querySelector(".menu-toggle");
 if (navToggle) {
   navToggle.addEventListener("click", () => {
     const open = document.body.classList.toggle("nav-open");
