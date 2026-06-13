@@ -14,7 +14,6 @@ Este repositório corresponde à entrega final do PortfolioHUB, com publicação
 - [Segurança e controle de acesso](documentacao/seguranca-controle-acesso.md)
 - [Uso do Google Gemini](documentacao/uso-gemini.md)
 - [Testes finais](documentacao/testes-finais.md)
-- [Roteiro do vídeo final](documentacao/roteiro-video-final.md)
 
 ## Status
 
