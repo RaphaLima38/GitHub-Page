@@ -3,336 +3,263 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Portfólio digital de Raphael Victor Gomes Lima, estudante de ADS no CEUB.">
-  <title>portfolioHUB | Raphael Victor Gomes Lima</title>
+  <meta name="description" content="PortfolioHUB de Raphael Victor Gomes Lima - entrega final com implantacao, GitHub Pages e documentacao.">
+  <title>PortfolioHUB | Raphael Victor Gomes Lima</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="background-grid" aria-hidden="true"></div>
-  <div class="glow glow-left" aria-hidden="true"></div>
-  <div class="glow glow-right" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="#topo" aria-label="Voltar ao inicio">
+      <span class="brand-mark">&lt;/&gt;</span>
+      <span>PortfolioHUB</span>
+    </a>
 
-  <div class="shell">
-    <header class="site-header">
-      <a class="brand" href="#topo">
-        <span class="brand-icon">&lt;/&gt;</span>
-        <span class="brand-text">portfolioHUB</span>
-      </a>
+    <button class="menu-button" type="button" aria-expanded="false" aria-label="Abrir menu">
+      <span></span>
+      <span></span>
+    </button>
 
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-label="Abrir menu">
-        <span></span>
-        <span></span>
-      </button>
+    <nav class="main-nav" aria-label="Navegacao principal">
+      <a href="#implantacao">Implantação</a>
+      <a href="#portfolio">Portfólio</a>
+      <a href="#seguranca">Segurança</a>
+      <a href="#projetos">Projetos</a>
+      <a href="#contato">Contato</a>
+    </nav>
+  </header>
 
-      <nav class="site-nav" aria-label="Navegação principal">
-        <a href="#perfil">Perfil</a>
-        <a href="#curriculo">Currículo</a>
-        <a href="#projetos">Projetos</a>
-        <a href="#habilidades">Habilidades</a>
-        <a href="#contato">Contato</a>
-      </nav>
-    </header>
-
-    <main id="topo">
-      <section class="hero" id="perfil">
-        <div class="hero-copy reveal">
-          <p class="eyebrow">Análise e Desenvolvimento de Sistemas</p>
-          <h1>Raphael Victor Gomes Lima</h1>
-          <p class="hero-text">
-            Estudante de ADS no CEUB, focado em construir uma base forte em programação,
-            lógica, organização de projetos e prática real em tecnologia.
-          </p>
-          <p class="hero-text muted-text">
-            Este site foi pensado para ter uma cara mais alinhada com desenvolvimento:
-            visual limpo, linguagem direta e identidade mais próxima de programação.
-          </p>
-
-          <div class="hero-actions">
-            <button class="button button-primary copy-email-trigger" type="button" data-email="raphael.vgomeslima@gmail.com" data-default-label="Copiar e-mail" data-success-label="E-mail copiado">
-              Copiar e-mail
-            </button>
-          </div>
-
-          <div class="hero-tags">
-            <span>CEUB • Asa Norte</span>
-            <span>1º semestre de 2026</span>
-            <span>RA 22605360</span>
-            <span>ADS</span>
-          </div>
-        </div>
-
-        <div class="hero-side reveal reveal-delay">
-          <article class="profile-card">
-            <div class="photo-frame">
-              <img src="assets/raphael-perfil.jpg" alt="Foto de Raphael Victor Gomes Lima">
-            </div>
-            <div class="profile-details">
-              <p class="panel-label">Snapshot</p>
-              <h2>Base técnica em construção</h2>
-              <p>
-                Meu objetivo é transformar estudo em prática, evoluindo em programação,
-                lógica e organização de projetos ao longo da graduação.
-              </p>
-            </div>
-          </article>
-
-          <article class="terminal-card">
-            <p class="panel-label">Stack atual</p>
-            <div class="mini-terminal">
-              <div class="terminal-dots" aria-hidden="true">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-              <ul class="terminal-list">
-                <li><strong>Curso:</strong> ADS</li>
-                <li><strong>Foco:</strong> Lógica, Python e JavaScript</li>
-                <li><strong>Prática:</strong> Hardware e suporte básico</li>
-                <li><strong>Objetivo:</strong> Primeira oportunidade na área</li>
-              </ul>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="section metrics reveal">
-        <article class="metric-card">
-          <p class="panel-label">Momento</p>
-          <strong>Início da graduação</strong>
-          <p>Fase de consolidar fundamentos e ganhar ritmo técnico.</p>
-        </article>
-        <article class="metric-card">
-          <p class="panel-label">Foco</p>
-          <strong>Programação e lógica</strong>
-          <p>Aprendizado voltado para base sólida e clareza de raciocínio.</p>
-        </article>
-        <article class="metric-card">
-          <p class="panel-label">Meta</p>
-          <strong>Experiência real</strong>
-          <p>Conquistar a primeira oportunidade e crescer com consistência.</p>
-        </article>
-      </section>
-
-      <section class="section" id="curriculo">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Currículo resumido</p>
-          <h2>Formação, prática e direção profissional</h2>
-          <p>
-            Um resumo objetivo do que já venho construindo na graduação e fora dela.
-          </p>
-        </div>
-
-        <div class="card-grid">
-          <article class="info-card reveal">
-            <h3>Formação atual</h3>
-            <ul>
-              <li>Superior de Tecnologia em Análise e Desenvolvimento de Sistemas - CEUB</li>
-              <li>1º semestre de 2026</li>
-              <li>Curso complementar: Iniciante em Programação - Alura</li>
-            </ul>
-          </article>
-
-          <article class="info-card reveal">
-            <h3>Estudos atuais</h3>
-            <ul>
-              <li>Lógica de programação</li>
-              <li>Python básico</li>
-              <li>JavaScript básico</li>
-              <li>Resolução de problemas</li>
-            </ul>
-          </article>
-
-          <article class="info-card reveal">
-            <h3>Experiência prática</h3>
-            <ul>
-              <li>Montagem e manutenção de computadores</li>
-              <li>Suporte básico em hardware</li>
-              <li>Estudos aplicados com exercícios e atividades acadêmicas</li>
-            </ul>
-          </article>
-
-          <article class="info-card reveal">
-            <h3>Objetivo profissional</h3>
-            <ul>
-              <li>Conseguir a primeira oportunidade na área</li>
-              <li>Desenvolver prática real durante a graduação</li>
-              <li>Crescer com base técnica organizada</li>
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <section class="section" id="projetos">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Projetos e estudos</p>
-          <h2>Experiências reais já registradas</h2>
-          <p>
-            Sem inventar projeto gigante. Aqui entra o que realmente faz parte da minha trajetória atual.
-          </p>
-        </div>
-
-        <div class="project-grid">
-          <article class="project-card reveal">
-            <span class="status-chip">Acadêmico</span>
-            <h3>Sistematização de Matemática para Computação</h3>
-            <p>
-              Atividade com foco em lógica de predicados e teoria dos conjuntos,
-              usando um cenário de gerenciamento de hotel para organizar regras e processos.
-            </p>
-            <ul>
-              <li>Lógica matemática</li>
-              <li>Conjuntos</li>
-              <li>Raciocínio estruturado</li>
-            </ul>
-          </article>
-
-          <article class="project-card reveal">
-            <span class="status-chip">Estudos</span>
-            <h3>Lógica de programação com JavaScript</h3>
-            <p>
-              Exercícios voltados para condicionais, repetição, variáveis e resolução de problemas
-              usando base introdutória em JavaScript.
-            </p>
-            <ul>
-              <li>Alura</li>
-              <li>Fundamentos</li>
-              <li>Prática de raciocínio</li>
-            </ul>
-          </article>
-
-          <article class="project-card reveal">
-            <span class="status-chip">Em desenvolvimento</span>
-            <h3>Estudos iniciais em Python</h3>
-            <p>
-              Aprendizado de sintaxe, entrada e saída de dados e estruturação do pensamento
-              para começar a construir programas simples.
-            </p>
-            <ul>
-              <li>Base introdutória</li>
-              <li>Estruturas condicionais</li>
-              <li>Prática gradual</li>
-            </ul>
-          </article>
-
-          <article class="project-card reveal">
-            <span class="status-chip">Prática pessoal</span>
-            <h3>Montagem e manutenção de computadores</h3>
-            <p>
-              Contato prático com hardware, limpeza, montagem e identificação de problemas,
-              desenvolvido por estudo pessoal e interesse contínuo na área.
-            </p>
-            <ul>
-              <li>Hardware</li>
-              <li>Suporte</li>
-              <li>Aprendizado autônomo</li>
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <section class="section" id="habilidades">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Habilidades</p>
-          <h2>Conhecimentos técnicos e competências</h2>
-          <p>
-            O que melhor representa meu momento atual de formação.
-          </p>
-        </div>
-
-        <div class="skills-grid">
-          <article class="skills-card reveal">
-            <h3>Conhecimentos técnicos</h3>
-            <div class="chip-group">
-              <span>Lógica de programação</span>
-              <span>Python básico</span>
-              <span>JavaScript básico</span>
-              <span>Hardware</span>
-              <span>Suporte básico</span>
-              <span>Noções de automação</span>
-            </div>
-          </article>
-
-          <article class="skills-card reveal">
-            <h3>Competências pessoais</h3>
-            <div class="chip-group">
-              <span>Organização</span>
-              <span>Trabalho em equipe</span>
-              <span>Responsabilidade</span>
-              <span>Boa convivência</span>
-              <span>Vontade de aprender</span>
-              <span>Constância</span>
-            </div>
-          </article>
-
-          <article class="skills-card feature-card reveal">
-            <h3>Resumo do meu momento atual</h3>
-            <p>
-              Hoje meu foco é seguir evoluindo em lógica, programação e organização de projetos,
-              transformando a base teórica da graduação em experiência prática de verdade.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section class="section" id="recomendacoes">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Recomendações</p>
-          <h2>Construção gradual e honesta</h2>
-        </div>
-
-        <article class="quote-card reveal">
-          <p>
-            Ainda estou no início da minha trajetória acadêmica e profissional.
-            Conforme eu acumular mais projetos e experiências, esta seção será atualizada com recomendações formais.
-          </p>
-        </article>
-      </section>
-
-      <section class="section" id="contato">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Contato</p>
-          <h2>Meios principais de acesso</h2>
-        </div>
-
-        <div class="contact-grid">
-          <button class="contact-card contact-button copy-email-trigger reveal" type="button" data-email="raphael.vgomeslima@gmail.com" data-default-label="Clique para copiar" data-success-label="E-mail copiado">
-            <span class="panel-label">E-mail</span>
-            <strong>raphael.vgomeslima@gmail.com</strong>
-            <small>Contato direto para oportunidade, conversa ou apresentação.</small>
-          </button>
-
-          <a class="contact-card reveal" href="https://github.com/RaphaLima38" target="_blank" rel="noreferrer">
-            <span class="panel-label">GitHub</span>
-            <strong>github.com/RaphaLima38</strong>
-            <small>Repositórios, evolução de projetos e presença técnica.</small>
-          </a>
-
-          <a class="contact-card reveal" href="https://www.linkedin.com/in/raphael-victor-gomes-lima-200b5a37a/" target="_blank" rel="noreferrer">
-            <span class="panel-label">LinkedIn</span>
-            <strong>linkedin.com/in/raphael-victor-gomes-lima-200b5a37a</strong>
-            <small>Perfil profissional e networking.</small>
-          </a>
-        </div>
-      </section>
-
-      <section class="closing-panel reveal">
-        <p class="eyebrow">Direção</p>
-        <h2>Quero transformar estudo em prática, e prática em oportunidade.</h2>
-        <p>
-          O site foi redesenhado para refletir melhor essa proposta: identidade mais técnica,
-          visual mais consistente e estrutura mais alinhada com desenvolvimento.
+  <main id="topo">
+    <section class="hero">
+      <div class="hero-media" aria-hidden="true">
+        <img src="assets/raphael-perfil.jpg" alt="">
+      </div>
+      <div class="hero-content" data-animate>
+        <p class="kicker">Entrega final - PortfolioHUB + IA Gemini</p>
+        <h1>Raphael Victor Gomes Lima</h1>
+        <p class="lead">
+          Estudante de Análise e Desenvolvimento de Sistemas no CEUB, organizando meu portfólio
+          digital com GitHub Pages, documentação de implantação e práticas básicas de segurança.
         </p>
-      </section>
-    </main>
+        <div class="hero-actions">
+          <a class="button primary" href="https://github.com/RaphaLima38/GitHub-Page" target="_blank" rel="noreferrer">Ver repositório</a>
+          <button class="button ghost copy-email" type="button" data-email="raphael.vgomeslima@gmail.com">Copiar e-mail</button>
+        </div>
+        <div class="profile-tags" aria-label="Informacoes academicas">
+          <span>ADS</span>
+          <span>CEUB - Asa Norte</span>
+          <span>RA 22605360</span>
+          <span>1º semestre de 2026</span>
+        </div>
+      </div>
+    </section>
 
-    <footer class="site-footer">
-      <p>portfolioHUB • Raphael Victor Gomes Lima</p>
-      <p><span id="current-year"></span> • ADS • CEUB</p>
-    </footer>
-  </div>
+    <section class="section intro-strip" aria-label="Resumo da entrega">
+      <div class="strip-item" data-animate>
+        <strong>Site publicado</strong>
+        <span>GitHub Pages com acesso público.</span>
+      </div>
+      <div class="strip-item" data-animate>
+        <strong>Controle de versão</strong>
+        <span>Projeto versionado no GitHub.</span>
+      </div>
+      <div class="strip-item" data-animate>
+        <strong>Documentação final</strong>
+        <span>Implantação, segurança, acesso e testes.</span>
+      </div>
+    </section>
+
+    <section class="section" id="implantacao">
+      <div class="section-title" data-animate>
+        <p class="kicker">Implantação</p>
+        <h2>Como o PortfolioHUB foi preparado para a entrega final</h2>
+        <p>
+          Nesta etapa o foco foi deixar o portfólio publicado, organizado e documentado,
+          mostrando o uso prático de Git, GitHub, GitHub Pages e apoio de IA no planejamento.
+        </p>
+      </div>
+
+      <div class="timeline">
+        <article class="timeline-card" data-animate>
+          <span>01</span>
+          <h3>Planejamento</h3>
+          <p>Definição do objetivo da entrega final, organização das seções e registro das etapas de implantação.</p>
+        </article>
+        <article class="timeline-card" data-animate>
+          <span>02</span>
+          <h3>Git e GitHub</h3>
+          <p>Uso de repositório dedicado, commits organizados e publicação do site pelo GitHub Pages.</p>
+        </article>
+        <article class="timeline-card" data-animate>
+          <span>03</span>
+          <h3>Segurança</h3>
+          <p>Documentação de permissões, exposição pública controlada e cuidado para não publicar dados sensíveis.</p>
+        </article>
+        <article class="timeline-card" data-animate>
+          <span>04</span>
+          <h3>Testes finais</h3>
+          <p>Conferência dos links, responsividade, leitura do conteúdo e funcionamento dos botões principais.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section split-section" id="portfolio">
+      <div class="section-title" data-animate>
+        <p class="kicker">Portfólio</p>
+        <h2>Perfil, currículo e direção profissional</h2>
+        <p>
+          O conteúdo foi mantido realista para meu momento atual: início da graduação,
+          base em lógica/programação e interesse em tecnologia, hardware e desenvolvimento.
+        </p>
+      </div>
+
+      <div class="content-grid">
+        <article class="content-card" data-animate>
+          <h3>Formação</h3>
+          <ul>
+            <li>Superior de Tecnologia em Análise e Desenvolvimento de Sistemas - CEUB.</li>
+            <li>Campus Asa Norte, turno matutino.</li>
+            <li>Curso complementar de lógica e programação pela Alura.</li>
+          </ul>
+        </article>
+
+        <article class="content-card" data-animate>
+          <h3>Habilidades atuais</h3>
+          <ul>
+            <li>Lógica de programação.</li>
+            <li>Python e JavaScript em nível inicial.</li>
+            <li>Montagem, manutenção e suporte básico em computadores.</li>
+          </ul>
+        </article>
+
+        <article class="content-card" data-animate>
+          <h3>Objetivo</h3>
+          <ul>
+            <li>Conseguir a primeira oportunidade na área de tecnologia.</li>
+            <li>Ganhar prática real durante a graduação.</li>
+            <li>Manter o portfólio atualizado com novos projetos.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section security-band" id="seguranca">
+      <div class="section-title" data-animate>
+        <p class="kicker">Segurança e acesso</p>
+        <h2>Políticas simples, mas coerentes com o projeto</h2>
+      </div>
+
+      <div class="security-grid">
+        <article data-animate>
+          <h3>Repositório público</h3>
+          <p>O projeto fica público para avaliação acadêmica, mas sem exposição de senhas, tokens, documentos pessoais ou arquivos fora do escopo.</p>
+        </article>
+        <article data-animate>
+          <h3>Controle de colaboradores</h3>
+          <p>O acesso de escrita fica restrito ao dono do repositório. Colaborações futuras devem acontecer por pull request ou revisão manual.</p>
+        </article>
+        <article data-animate>
+          <h3>Versionamento</h3>
+          <p>Alterações relevantes são registradas em commits, permitindo acompanhar evolução, corrigir erros e manter histórico do projeto.</p>
+        </article>
+        <article data-animate>
+          <h3>Apoio com IA Gemini</h3>
+          <p>O Gemini entra como apoio para revisar planejamento, boas práticas de implantação, segurança e apresentação final.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="projetos">
+      <div class="section-title" data-animate>
+        <p class="kicker">Projetos e registros</p>
+        <h2>O que compõe o PortfolioHUB</h2>
+      </div>
+
+      <div class="project-list">
+        <article class="project-card" data-animate>
+          <div>
+            <span class="status">Acadêmico</span>
+            <h3>Sistematização de Matemática para Computação</h3>
+          </div>
+          <p>Atividade com lógica de predicados e teoria dos conjuntos aplicada a um cenário fictício de hotel.</p>
+          <small>Lógica matemática, conjuntos, documentação.</small>
+        </article>
+
+        <article class="project-card" data-animate>
+          <div>
+            <span class="status">Estudo</span>
+            <h3>Lógica de programação</h3>
+          </div>
+          <p>Exercícios e revisões com variáveis, operadores, decisão, repetição e raciocínio estruturado.</p>
+          <small>JavaScript básico, fundamentos, prática.</small>
+        </article>
+
+        <article class="project-card" data-animate>
+          <div>
+            <span class="status">Prática pessoal</span>
+            <h3>Hardware e manutenção</h3>
+          </div>
+          <p>Experiência prática com montagem, limpeza, manutenção e diagnóstico básico de computadores.</p>
+          <small>Hardware, suporte, organização.</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="section docs-section">
+      <div class="section-title" data-animate>
+        <p class="kicker">Documentação</p>
+        <h2>Arquivos usados para comprovar a implantação</h2>
+      </div>
+
+      <div class="docs-grid">
+        <a class="doc-link" href="https://github.com/RaphaLima38/GitHub-Page/blob/main/documentacao/plano-implantacao.md" target="_blank" rel="noreferrer" data-animate>
+          <strong>Plano de implantação</strong>
+          <span>Etapas, ambiente e publicação.</span>
+        </a>
+        <a class="doc-link" href="https://github.com/RaphaLima38/GitHub-Page/blob/main/documentacao/seguranca-controle-acesso.md" target="_blank" rel="noreferrer" data-animate>
+          <strong>Segurança e acesso</strong>
+          <span>Permissões, dados sensíveis e colaboração.</span>
+        </a>
+        <a class="doc-link" href="https://github.com/RaphaLima38/GitHub-Page/blob/main/documentacao/uso-gemini.md" target="_blank" rel="noreferrer" data-animate>
+          <strong>Uso do Gemini</strong>
+          <span>Prompts e apoio na revisão da entrega.</span>
+        </a>
+        <a class="doc-link" href="https://github.com/RaphaLima38/GitHub-Page/blob/main/documentacao/testes-finais.md" target="_blank" rel="noreferrer" data-animate>
+          <strong>Testes finais</strong>
+          <span>Checklist antes da entrega.</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="section contact-section" id="contato">
+      <div class="section-title" data-animate>
+        <p class="kicker">Contato</p>
+        <h2>Links principais</h2>
+      </div>
+
+      <div class="contact-grid">
+        <button class="contact-card copy-email" type="button" data-email="raphael.vgomeslima@gmail.com" data-animate>
+          <span>E-mail</span>
+          <strong>raphael.vgomeslima@gmail.com</strong>
+        </button>
+        <a class="contact-card" href="https://github.com/RaphaLima38" target="_blank" rel="noreferrer" data-animate>
+          <span>GitHub</span>
+          <strong>github.com/RaphaLima38</strong>
+        </a>
+        <a class="contact-card" href="https://www.linkedin.com/in/raphael-victor-gomes-lima-200b5a37a/" target="_blank" rel="noreferrer" data-animate>
+          <span>LinkedIn</span>
+          <strong>Perfil profissional</strong>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>PortfolioHUB - Raphael Victor Gomes Lima</span>
+    <span id="current-year"></span>
+  </footer>
 
   <script src="script.js"></script>
 </body>
