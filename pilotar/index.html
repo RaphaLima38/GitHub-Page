@@ -56,10 +56,42 @@ kbd{display:inline-block;min-width:22px;padding:1px 6px;border:1px solid #3a3229
 .hidden{display:none!important}
 #results table{width:100%;border-collapse:collapse;margin:10px 0 18px;font:400 14px 'JetBrains Mono',monospace}
 #results td{padding:8px 6px;border-bottom:1px solid var(--stroke)}
-/* touch */
-#touch{position:fixed;inset:auto 0 0 0;height:150px;display:none;pointer-events:none;z-index:5}
-#touch .tb{position:absolute;bottom:18px;width:74px;height:74px;border-radius:50%;background:rgba(20,17,14,.6);border:1px solid var(--stroke);color:var(--silver);font:700 22px Inter;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none}
-#touch .tb.on{background:rgba(245,165,36,.35)}
+/* ---------- modo celular ---------- */
+body.mobile{touch-action:none;overscroll-behavior:none;-webkit-touch-callout:none}
+#touch{position:fixed;inset:0;display:none;pointer-events:none;z-index:5}
+body.mobile.playing #touch{display:block}
+#steerZone{position:absolute;left:0;bottom:0;width:48vw;height:70vh;pointer-events:auto;touch-action:none}
+#steerTrack{position:absolute;left:max(18px,env(safe-area-inset-left));bottom:max(22px,env(safe-area-inset-bottom));width:min(230px,38vw);height:70px;border-radius:40px;background:rgba(20,17,14,.55);border:1px solid var(--stroke);backdrop-filter:blur(4px)}
+#steerTrack::before,#steerTrack::after{content:'◀';position:absolute;top:50%;left:14px;transform:translateY(-50%);color:var(--dim);font:700 16px Inter}
+#steerTrack::after{content:'▶';left:auto;right:14px}
+#steerKnob{position:absolute;top:5px;left:50%;width:60px;height:60px;margin-left:-30px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ffd58f,#f5a524 60%,#a86a10);box-shadow:0 4px 18px rgba(245,165,36,.45);transition:transform .04s linear}
+#steerHint{position:absolute;left:max(18px,env(safe-area-inset-left));bottom:100px;font:700 10px 'JetBrains Mono',monospace;letter-spacing:2px;color:var(--dim)}
+.pedal{position:absolute;display:flex;align-items:center;justify-content:center;text-align:center;pointer-events:auto;touch-action:none;border-radius:18px;border:1px solid var(--stroke);background:rgba(20,17,14,.6);backdrop-filter:blur(4px);color:var(--silver);font:italic 900 13px Inter;letter-spacing:1px;line-height:1.15;transition:transform .05s,background .05s}
+.pedal.on{transform:scale(.94)}
+#pGas{right:max(18px,env(safe-area-inset-right));bottom:max(22px,env(safe-area-inset-bottom));width:96px;height:150px;background:linear-gradient(180deg,rgba(255,196,107,.35),rgba(245,165,36,.25));border-color:#a86a10}
+#pGas.on{background:linear-gradient(180deg,rgba(255,196,107,.75),rgba(245,165,36,.6));color:#120d06}
+#pBrake{right:calc(max(18px,env(safe-area-inset-right)) + 108px);bottom:max(22px,env(safe-area-inset-bottom));width:92px;height:104px}
+#pBrake.on{background:rgba(227,23,10,.55)}
+#pHb{right:calc(max(18px,env(safe-area-inset-right)) + 108px);bottom:calc(max(22px,env(safe-area-inset-bottom)) + 114px);width:92px;height:62px;font-size:11px}
+#pHb.on{background:rgba(255,59,48,.6)}
+#pauseBtn{position:absolute;top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));width:44px;height:44px;padding:0;border-radius:12px;pointer-events:auto;font:900 16px Inter;letter-spacing:0;font-style:normal;box-shadow:none;background:rgba(20,17,14,.7);color:var(--silver);border:1px solid var(--stroke)}
+#mobileHelp{display:none!important}
+.mobileOnly{display:none!important}
+body.mobile .mobileOnly{display:block!important}
+body.mobile #b2,body.mobile .keys,body.mobile .deskOnly{display:none!important}
+body.mobile .hud{top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left));height:auto;padding:6px 10px;gap:10px}
+body.mobile .hud .pos{font-size:24px} body.mobile .hud .spd{font-size:24px} body.mobile .hud .rows{min-width:118px}
+body.mobile #timer{font-size:14px;margin-top:2px} body.mobile #msg{font-size:28px}
+body.mobile #lights i{width:24px;height:24px}
+body.mobile .card{padding:16px 18px 12px;touch-action:pan-y} body.mobile p.lead{font-size:12.5px;margin-bottom:10px}
+body.mobile h1{font-size:clamp(34px,7vw,52px)} body.mobile .bar{margin:8px 0 10px} body.mobile .opts{margin:10px 0 2px}
+body.mobile button{padding:11px 18px;font-size:16px} body.mobile #pGas{font-size:12px;white-space:nowrap}
+@media (orientation:landscape) and (max-height:500px){body.mobile p.lead{display:none}}
+#rotate{display:none}
+@media (orientation:portrait){body.mobile.playing #rotate{display:flex}}
+#rotate{position:fixed;inset:auto 0 50% 0;transform:translateY(50%);justify-content:center;pointer-events:none;z-index:6}
+#rotate span{padding:10px 16px;border-radius:12px;background:rgba(13,11,9,.8);border:1px solid var(--stroke);font:700 12px 'JetBrains Mono',monospace;letter-spacing:2px;color:var(--amber-l);animation:fade 3s forwards}
+@keyframes fade{0%,70%{opacity:1}100%{opacity:0}}
 @media (max-width:640px){.keys{grid-template-columns:1fr}.hud{min-width:0;padding:8px 10px}.hud .spd{font-size:24px}}
 </style>
 </head>
@@ -86,7 +118,11 @@ kbd{display:inline-block;min-width:22px;padding:1px 6px;border:1px solid #3a3229
       <div><div class="t" style="color:var(--p1)">JOGADOR 1 · PRATA</div><kbd>W</kbd> acelerar · <kbd>S</kbd> frear/ré<br><kbd>A</kbd> <kbd>D</kbd> esterçar · <kbd>ESPAÇO</kbd> freio de mão</div>
       <div><div class="t" style="color:var(--p2)">JOGADOR 2 · VERMELHO</div><kbd>↑</kbd> acelerar · <kbd>↓</kbd> frear/ré<br><kbd>←</kbd> <kbd>→</kbd> esterçar · <kbd>SHIFT</kbd> direito freio de mão</div>
     </div>
-    <div class="opts" style="margin-top:12px"><kbd>ESC</kbd> pausa · <kbd>C</kbd> câmera (1 jogador) · <kbd>M</kbd> som</div>
+    <div class="opts deskOnly" style="margin-top:12px"><kbd>ESC</kbd> pausa · <kbd>C</kbd> câmera (1 jogador) · <kbd>M</kbd> som</div>
+    <div id="mobileHelp" class="keys" style="display:none"></div>
+    <div id="mobileHelpBox" class="mobileOnly" style="margin-top:14px;border:1px solid var(--stroke);border-radius:12px;padding:12px;font-size:13px;color:var(--muted);line-height:1.7">
+      <div class="mono" style="font-size:11px;letter-spacing:3px;color:var(--amber)">NO CELULAR</div>
+      <b style="color:var(--silver)">Arraste</b> o dedo para os lados na esquerda para esterçar · <b style="color:var(--silver)">pedais</b> na direita: acelerar, freio/ré e freio de mão · melhor na horizontal</div>
     <div class="foot"><span id="dataInfo">Carregando contribuições…</span><a href="https://github.com/RaphaLima38">← voltar ao perfil</a></div>
   </div>
 </div>
@@ -101,8 +137,14 @@ kbd{display:inline-block;min-width:22px;padding:1px 6px;border:1px solid #3a3229
   <table id="resTable"></table>
   <div class="btns"><button id="again">CORRER DE NOVO</button><button class="ghost" id="resMenu">MENU</button></div></div></div>
 
-<div id="touch"><div class="tb" data-k="left" style="left:16px">◀</div><div class="tb" data-k="right" style="left:102px">▶</div>
-  <div class="tb" data-k="hb" style="right:188px;font-size:13px">FREIO<br>MÃO</div><div class="tb" data-k="brake" style="right:102px">▼</div><div class="tb" data-k="gas" style="right:16px">▲</div></div>
+<div id="touch">
+  <div id="steerZone"><div id="steerHint">ARRASTE PARA ESTERÇAR</div><div id="steerTrack"><div id="steerKnob"></div></div></div>
+  <div class="pedal" id="pHb" data-k="hb">FREIO<br>DE MÃO</div>
+  <div class="pedal" id="pBrake" data-k="brake">FREIO<br>/ RÉ</div>
+  <div class="pedal" id="pGas" data-k="gas">▲<br>ACELERAR</div>
+  <button id="pauseBtn" aria-label="Pausa">❚❚</button>
+</div>
+<div id="rotate"><span>🔄 MELHOR COM O CELULAR NA HORIZONTAL</span></div>
 
 <script src="game.js"></script>
 </body>
