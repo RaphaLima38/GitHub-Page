@@ -101,8 +101,8 @@ function nearest(T, px, py, i0, win) {
 
 // ---------------------------------------------------------------- física do carro
 const M = 1450, IZ = 2600, A = 1.35, B = 1.10, HCG = 0.42, G = 9.81, MU = 1.3;
-const CF = 100000, CR = 170000, POWER = 290000, FMAX = 12500, DRAG = 0.55, ROLL = 30;
-const ESC_K = 3.5, IZ_HIT = IZ * 3;                          // controle de estabilidade; inércia efetiva nas batidas
+const CF = 70000, CR = 105000, POWER = 290000, FMAX = 12500, DRAG = 0.55, ROLL = 30;   // rigidez lateral: pico ~7° (progressivo)
+const ESC_K = 2.2, IZ_HIT = IZ * 3;                          // controle de estabilidade; inércia efetiva nas batidas
 const HL = 2.25, HW = 0.95;                                   // meia-caixa de colisão
 const GEARS = [13, 20, 27, 34, 41, 49, 60];                   // velocidade (m/s) a 9000 rpm
 class Car {
@@ -111,7 +111,7 @@ class Car {
     this.steer = 0; this.thr = 0; this.ax = 0; this.si = 0; this.lap = 0; this.half = false;
     this.lapStart = 0; this.best = null; this.laps = []; this.done = false; this.finish = 0;
     this.gear = 1; this.rpm = 1200; this.slip = 0; this.braking = false; this.reverse = false;
-    this.pop = 0; this.popT = 0; this.wrong = 0; this.driftT = 0; this.impactT = 0; this.prevS = 0; this.stuck = 0;
+    this.pop = 0; this.popT = 0; this.wrong = 0; this.hbT = 0; this.rg = 1; this.impactT = 0; this.prevS = 0; this.stuck = 0;
     this.input = { gas: 0, brake: 0, left: 0, right: 0, hb: 0 };
     this.rw = [null, null];                                  // última posição das rodas traseiras (marcas)
   }
@@ -121,80 +121,73 @@ class Car {
     const inp = this.input, c = Math.cos(this.h), s = Math.sin(this.h);
     let vx = this.vx * c + this.vy * s, vy = -this.vx * s + this.vy * c;
     const spd = Math.hypot(vx, vy), Lw = A + B, W = M * G;
-    const hb = !!inp.hb && !locked;
-    this.driftT = hb && spd > 4 ? 1.1 : Math.max(0, (this.driftT || 0) - dt);
-    const drift = this.driftT > 0;
-    // direção: rampa (mais rápida devagar), esterço máximo cai com a velocidade
+    const hb = !!inp.hb && !locked && spd > 1;
+    // aderência da traseira: cai rápido com o freio de mão e volta aos poucos ao soltar (sem tranco)
+    this.rg = this.rg == null ? 1 : this.rg;
+    this.rg += ((hb ? .55 : 1) - this.rg) * Math.min(1, dt * (hb ? 9 : 4));
+    this.hbT = hb ? 1.4 : Math.max(0, (this.hbT || 0) - dt);       // "modo drift" depois do freio de mão
+    // ângulo de deriva do carro (diferença entre para onde aponta e para onde vai)
+    const beta = spd > 2 ? Math.atan2(vy, Math.abs(vx) + .5) : 0;
+    // direção: rampa suave, esterço máximo cai com a velocidade (nunca pede mais que ~1,1 g)
     const target = inp.right - inp.left;
     const back = target === 0 || Math.sign(target) !== Math.sign(this.steer);
-    const rate = back ? 7 : 2.4 + 2.6 / (1 + spd / 8);
-    this.steer += clamp(target - this.steer, -rate * dt, rate * dt);
-    // esterço máximo: nunca pede mais do que ~1,1 g de curva (ajuste por velocidade, como num volante real)
-    const dmax = Math.min(0.5 / (1 + spd / 9) + 0.04, 1.1 * MU * G * Lw / Math.max(spd * spd, 1));
-    const beta = spd > 3 ? Math.atan2(vy, Math.abs(vx)) : 0;
-    let delta = this.steer * dmax;
-    if (drift && Math.abs(beta) > .08) delta = clamp(delta + beta * .4, -.6, .6);   // ajuda de contraesterço no drift
+    this.steer += clamp(target - this.steer, -(back ? 7 : 2.6 + 2.4 / (1 + spd / 8)) * dt, (back ? 7 : 2.6 + 2.4 / (1 + spd / 8)) * dt);
+    const dmax = Math.min(0.5 / (1 + spd / 9) + 0.04, 1.6 * MU * G * Lw / Math.max(spd * spd, 1));
+    // as rodas da frente se alinham sozinhas com a direção do movimento (torque autoalinhante)
+    const align = Math.abs(beta) > .06 ? (beta - Math.sign(beta) * .06) * .6 : 0;
+    const delta = clamp(this.steer * dmax + clamp(align, -.4, .4), -.62, .62);
     this.thr += clamp((locked ? 0 : inp.gas) - this.thr, -8 * dt, 3 * dt);
-    // cargas com transferência longitudinal (aceleração filtrada)
-    const Fzf = Math.max(0.3 * W, W * B / Lw - M * this.ax * HCG / Lw);
-    const Fzr = Math.max(0.3 * W, W * A / Lw + M * this.ax * HCG / Lw);
-    const capF = MU * Fzf, capR = MU * Fzr;
-    // longitudinal
-    let Fxf = 0, Fxr = 0, drive = 0;
+    // cargas com transferência longitudinal
+    const Fzf = Math.max(.3 * W, W * B / Lw - M * this.ax * HCG / Lw);
+    const Fzr = Math.max(.3 * W, W * A / Lw + M * this.ax * HCG / Lw);
+    const Df = MU * Fzf, Dr = MU * Fzr;
+    // pedidos longitudinais
+    let Fxf = 0, Fxr = 0;
     this.braking = false; this.reverse = false;
     if (!locked) {
-      if (this.thr > 0) drive = this.thr * Math.min(FMAX, POWER / Math.max(vx, 4));
+      if (this.thr > 0) Fxr = this.thr * Math.min(FMAX, POWER / Math.max(vx, 4), Dr * .92);
       if (inp.brake) {
-        if (vx > 0.8) { const bf = inp.brake * W * 1.15; Fxf -= bf * .72; Fxr -= Math.min(bf * .28, capR * .55); this.braking = true; }   // ABS: traseira nunca trava
-        else if (!inp.gas) { drive = -inp.brake * 4200; this.reverse = vx < 0.2; }
+        if (vx > .8) { const bf = inp.brake * W * 1.15; Fxf -= Math.min(bf * .72, Df * .97); Fxr -= Math.min(bf * .28, Dr * .5); this.braking = true; }
+        else if (!inp.gas) { Fxr = -inp.brake * 4200; this.reverse = vx < .2; }
       }
-    } else if (spd > 0.05) Fxf -= Math.sign(vx) * W * .8;
-    // controle de tração: corta potência se a traseira começa a escorregar
-    // usa só o que sobra do círculo de atrito depois da força lateral que a traseira já faz
-    const ar0 = Math.atan2(vy - this.r * B, Math.max(Math.abs(vx), 2));
-    let budget = Math.sqrt(Math.max(0, capR * capR - (this.fyr || 0) ** 2)) * (drift ? .95 : .9);
-    if (!drift && Math.abs(ar0) > .09) budget *= clamp(1 - (Math.abs(ar0) - .09) * 5, .2, 1);
-    if (drive > 0) drive = Math.min(drive, budget);
-    Fxr += drive;
-    if (hb) Fxr = -Math.sign(vx) * Math.min(Math.abs(vx) * M * 3, capR * .8);
-    Fxr = clamp(Fxr, -capR * .95, capR * .95); Fxf = clamp(Fxf, -capF * .95, capF * .95);
-    // pneus: ângulo de deriva + círculo de atrito
-    const vxa = Math.max(Math.abs(vx), 2), sg = vx >= -0.2 ? 1 : -1;
+    } else if (spd > .05) Fxf -= Math.sign(vx) * W * .8;
+    if (hb) Fxr = -Math.sign(vx) * Math.min(Math.abs(vx) * M * 2, Dr * .28);   // freio de mão: segura a traseira sem virar âncora
+    // forças laterais (curva progressiva) e elipse de atrito: frear/acelerar e virar dividem a mesma aderência
+    const vxa = Math.max(Math.abs(vx), 3), sg = vx >= -.2 ? 1 : -1;
     const af = Math.atan2(vy + this.r * A, vxa) - delta * sg;
     const ar = Math.atan2(vy - this.r * B, vxa);
-    const latF = Math.sqrt(Math.max(0, capF * capF - Fxf * Fxf));
-    const latR = hb ? capR * .3 : Math.sqrt(Math.max(0, capR * capR - Fxr * Fxr)) * (drift && this.thr > .5 ? .88 : 1);
-    const Fyf = -latF * Math.tanh(CF * af / Math.max(latF, 1));
-    const Fyr = -latR * Math.tanh(CR * ar / Math.max(latR, 1));
+    const Dyr = Dr * this.rg;
+    let Fyf = -Df * Math.tanh(CF * af / Df);
+    let Fyr = -Dyr * Math.tanh(CR * ar / Math.max(Dyr, 1));
+    let k = Math.hypot(Fxf, Fyf) / Df; if (k > 1) { Fxf /= k; Fyf /= k; }
+    const rad = Dr * Math.max(this.rg, .55);
+    k = Math.hypot(Fxr, Fyr) / rad; if (k > 1) { Fxr /= k; Fyr /= k; }
     this.fyr = Fyr;
     const cd = Math.cos(delta), sd = Math.sin(delta);
     const fx = Fxr + Fxf * cd - Fyf * sd - DRAG * vx * Math.abs(vx) - ROLL * vx;
-    const fy = Fyr + Fxf * sd + Fyf * cd - 40 * vy;
+    const fy = Fyr + Fxf * sd + Fyf * cd;
     let tq = A * (Fyf * cd + Fxf * sd) - B * Fyr;
-    // ESC: aproxima a guinada da que o volante pede (fraco durante o drift)
-    if (!locked && spd > 3) {
-      const lim = .92 * MU * G / Math.max(spd, 1);
-      const rT = clamp(vx * Math.tan(delta) / Lw, -lim, lim);
-      // no drift: girando para o mesmo lado o carro solta; contraesterçando ele segura o ângulo
-      const counter = Math.abs(this.steer) > .3 && Math.sign(this.steer) !== Math.sign(this.r);
-      tq -= (this.r - rT) * IZ * (hb ? 0 : drift ? (counter ? 2.4 : .5) : ESC_K);
+    // ESC suave: só fora do modo drift, corrige a guinada para a que o volante pede
+    if (!locked && spd > 4 && !this.hbT) {
+      const lim = .92 * MU * G / spd, rT = clamp(vx * Math.tan(this.steer * dmax) / Lw, -lim, lim);
+      tq -= (this.r - rT) * IZ * ESC_K;
     }
     if (this.impactT > 0) { tq -= this.r * IZ * 3; this.impactT -= dt; }
-    this.ax += (fx / M - this.ax) * Math.min(1, dt * 10);
-    // a velocidade fica guardada no referencial do mundo: a rotação do carro já é levada em conta
-    // ao reprojetar a velocidade na nova direção no próximo passo (sem somar o termo de Coriolis de novo)
+    this.ax += (fx / M - this.ax) * Math.min(1, dt * 8);
+    // velocidade no referencial do mundo: a rotação já entra ao reprojetar no próximo passo
     vx += fx / M * dt; vy += fy / M * dt;
     this.r += tq / IZ * dt;
     // baixa velocidade: comportamento cinemático (sem patinar parado)
-    if (spd < 2.5) {
-      const k = Math.min(1, dt * 10 * (1 - spd / 2.5));
-      vy -= vy * k; this.r += (vx * Math.tan(delta) / Lw - this.r) * k;
+    if (spd < 3) {
+      const kk = Math.min(1, dt * 8 * (1 - spd / 3));
+      vy -= vy * kk; this.r += (vx * Math.tan(delta) / Lw - this.r) * kk;
       if (!this.thr && !inp.brake && spd < .5) vx *= .94;
     }
     this.vx = vx * c - vy * s; this.vy = vx * s + vy * c;
     this.x += this.vx * dt; this.y += this.vy * dt; this.h += this.r * dt;
+    const drive = Math.max(0, Fxr), capR = Dr;
     // escorregamento (fumaça/marcas/som)
-    const wheelspin = !hb && drive > capR * .45 && vx < 10 ? .35 : 0;
+    const wheelspin = !hb && drive > capR * .7 && vx < 8 ? .3 : 0;
     this.slip = Math.max(Math.abs(ar) > .09 ? Math.min(1, (Math.abs(ar) - .09) * 3.5) : 0,
       hb && spd > 3 ? .8 : 0, wheelspin) * (spd > 2 ? 1 : 0);
     // câmbio e rotação
