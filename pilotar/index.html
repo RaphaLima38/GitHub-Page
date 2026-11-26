@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PILOTAR · GT3 RS no circuito de contribuições</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%8F%81%3C/text%3E%3C/svg%3E">
+<meta name="description" content="Pilote um Porsche 911 GT3 RS no circuito feito com as contribuições do GitHub do Raphael Victor. Drift, freio de mão e modo 2 jogadores.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,800;1,900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d0b09;--panel:#14110e;--stroke:#2a241d;--amber:#f5a524;--amber-l:#ffc46b;--silver:#e8e4dc;--muted:#9c9387;--dim:#6b6359;--red:#e3170a;--p1:#f5a524;--p2:#ff3b30}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--silver);font-family:Inter,system-ui,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
+canvas#game{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+/* HUD */
+.hud{position:fixed;top:10px;height:76px;padding:8px 14px;display:none;gap:16px;align-items:center;background:rgba(13,11,9,.78);border:1px solid var(--stroke);border-radius:12px;backdrop-filter:blur(6px);pointer-events:none;display:none}
+.hud.p1{left:14px;border-left:3px solid var(--p1)} .hud.p2{right:14px;border-right:3px solid var(--p2);text-align:right}
+.hud .who{display:none}
+.hud .pos{font:italic 900 34px Inter;line-height:1}
+.hud .rows{min-width:150px}.hud.p2{flex-direction:row-reverse}
+.hud .row{display:flex;gap:10px;justify-content:space-between;font:400 11px 'JetBrains Mono',monospace;color:var(--muted)}
+.hud .row b{color:var(--silver);font-weight:700}
+.hud .spd{font:italic 900 30px Inter;color:var(--silver);line-height:1;white-space:nowrap}
+.hud .spd small{font:700 11px 'JetBrains Mono',monospace;color:var(--muted);font-style:normal;margin-left:4px}
+.hud .gear{font:700 22px 'JetBrains Mono',monospace;color:var(--amber-l)}
+.leds{display:flex;gap:3px;margin-top:6px}.hud.p2 .leds{justify-content:flex-end}
+.leds i{width:12px;height:6px;border-radius:2px;background:#2a241d;transition:background .05s}
+#center{position:fixed;top:14px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none}
+#timer{font:700 18px 'JetBrains Mono',monospace;color:var(--silver);text-shadow:0 2px 8px #000;display:none}
+#msg{margin-top:6px;font:italic 900 46px Inter;letter-spacing:2px;color:var(--amber-l);text-shadow:0 4px 24px #000;opacity:0;transition:opacity .25s}
+#lights{display:none;gap:12px;justify-content:center;margin-top:10px;padding:12px 18px;background:rgba(10,9,8,.85);border:1px solid var(--stroke);border-radius:14px}
+#lights i{width:34px;height:34px;border-radius:50%;background:#2a0805;border:2px solid #3a1310}
+#lights i.on{background:radial-gradient(circle at 40% 35%,#ff8a7a,#e3170a 55%,#7a0a04);box-shadow:0 0 22px #e3170a}
+/* menus */
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,rgba(13,11,9,.55),rgba(13,11,9,.92));z-index:10;padding:16px}
+.card{width:min(720px,100%);background:rgba(20,17,14,.92);border:1px solid var(--stroke);border-radius:18px;padding:28px 28px 22px;box-shadow:0 30px 80px #000a;max-height:100%;overflow:auto}
+h1{margin:0;font:italic 900 clamp(44px,8vw,78px)/.95 Inter;letter-spacing:3px;color:var(--silver)}
+h1 span{color:var(--amber)}
+.bar{height:4px;width:160px;background:var(--red);box-shadow:0 0 14px var(--red);margin:12px 0 14px}
+p.lead{margin:0 0 18px;color:var(--muted);font-size:15px;line-height:1.5}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+button{font:italic 900 18px Inter;letter-spacing:2px;color:#120d06;background:linear-gradient(180deg,var(--amber-l),var(--amber));border:0;border-radius:12px;padding:14px 22px;cursor:pointer;box-shadow:0 6px 24px rgba(245,165,36,.35);transition:transform .08s,filter .15s}
+button:hover{filter:brightness(1.08);transform:translateY(-1px)} button:active{transform:translateY(1px)}
+button.ghost{background:transparent;color:var(--silver);border:1px solid var(--stroke);box-shadow:none;font-style:normal;font-weight:600;letter-spacing:1px;font-size:14px}
+button.sel{outline:2px solid var(--amber-l);outline-offset:2px}
+.opts{display:flex;gap:8px;align-items:center;margin:16px 0 4px;flex-wrap:wrap;color:var(--muted);font:400 12px 'JetBrains Mono',monospace;letter-spacing:1px}
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.keys div{border:1px solid var(--stroke);border-radius:12px;padding:12px;font-size:13px;color:var(--muted);line-height:1.7}
+.keys b{color:var(--silver)} .keys .t{font:700 11px 'JetBrains Mono',monospace;letter-spacing:3px}
+kbd{display:inline-block;min-width:22px;padding:1px 6px;border:1px solid #3a3229;border-bottom-width:2px;border-radius:5px;background:#1a1612;color:var(--silver);font:700 11px 'JetBrains Mono',monospace;text-align:center}
+.foot{margin-top:16px;font-size:12px;color:var(--dim);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.foot a{color:var(--muted)}
+.hidden{display:none!important}
+#results table{width:100%;border-collapse:collapse;margin:10px 0 18px;font:400 14px 'JetBrains Mono',monospace}
+#results td{padding:8px 6px;border-bottom:1px solid var(--stroke)}
+/* touch */
+#touch{position:fixed;inset:auto 0 0 0;height:150px;display:none;pointer-events:none;z-index:5}
+#touch .tb{position:absolute;bottom:18px;width:74px;height:74px;border-radius:50%;background:rgba(20,17,14,.6);border:1px solid var(--stroke);color:var(--silver);font:700 22px Inter;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none}
+#touch .tb.on{background:rgba(245,165,36,.35)}
+@media (max-width:640px){.keys{grid-template-columns:1fr}.hud{min-width:0;padding:8px 10px}.hud .spd{font-size:24px}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div class="hud p1" id="hud1"><div class="pos" id="pos1">1º</div>
+  <div class="rows"><div class="row">VOLTA <b id="lap1">1/3</b></div><div class="row">ATUAL <b id="cur1">0:00.000</b></div><div class="row">MELHOR <b id="best1">—</b></div></div>
+  <div><div class="spd"><span id="spd1">0</span><small>KM/H</small> <span class="gear" id="gear1">N</span></div><div class="leds" id="leds1"></div></div></div>
+<div class="hud p2" id="hud2"><div class="pos" id="pos2">2º</div>
+  <div class="rows"><div class="row">VOLTA <b id="lap2">1/3</b></div><div class="row">ATUAL <b id="cur2">0:00.000</b></div><div class="row">MELHOR <b id="best2">—</b></div></div>
+  <div><div class="spd"><span id="spd2">0</span><small>KM/H</small> <span class="gear" id="gear2">N</span></div><div class="leds" id="leds2"></div></div></div>
+<div id="center"><div id="timer"></div><div id="lights"><i></i><i></i><i></i><i></i><i></i></div><div id="msg"></div></div>
+
+<div class="overlay" id="menu">
+  <div class="card">
+    <div class="mono" style="color:var(--amber);letter-spacing:4px;font-size:12px">RAPHALIMA38 · GRAND PRIX</div>
+    <h1>PILO<span>TAR</span></h1><div class="bar"></div>
+    <p class="lead">Um Porsche 911 GT3 RS no circuito montado com as contribuições do GitHub. Cada linha é um dia da semana, cada quadrado é um dia de código. Freie forte, puxe o freio de mão nos grampos e saia de lado.</p>
+    <div class="btns"><button id="b1">1 JOGADOR</button><button id="b2">2 JOGADORES</button></div>
+    <div class="opts">VOLTAS <button class="ghost" data-laps="1">1</button><button class="ghost sel" data-laps="3">3</button><button class="ghost" data-laps="5">5</button>
+      <span style="flex:1"></span><button class="ghost" id="snd">🔊 SOM</button></div>
+    <div class="keys">
+      <div><div class="t" style="color:var(--p1)">JOGADOR 1 · PRATA</div><kbd>W</kbd> acelerar · <kbd>S</kbd> frear/ré<br><kbd>A</kbd> <kbd>D</kbd> esterçar · <kbd>ESPAÇO</kbd> freio de mão</div>
+      <div><div class="t" style="color:var(--p2)">JOGADOR 2 · VERMELHO</div><kbd>↑</kbd> acelerar · <kbd>↓</kbd> frear/ré<br><kbd>←</kbd> <kbd>→</kbd> esterçar · <kbd>SHIFT</kbd> direito freio de mão</div>
+    </div>
+    <div class="opts" style="margin-top:12px"><kbd>ESC</kbd> pausa · <kbd>C</kbd> câmera (1 jogador) · <kbd>M</kbd> som</div>
+    <div class="foot"><span id="dataInfo">Carregando contribuições…</span><a href="https://github.com/RaphaLima38">← voltar ao perfil</a></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="pause"><div class="card" style="width:min(420px,100%);text-align:center">
+  <h1 style="font-size:52px">PAUSA</h1><div class="bar" style="margin:12px auto 18px"></div>
+  <div class="btns" style="justify-content:center"><button id="resume">CONTINUAR</button><button class="ghost" id="restart">REINICIAR</button><button class="ghost" id="tomenu">MENU</button></div></div></div>
+
+<div class="overlay hidden" id="results"><div class="card" style="width:min(520px,100%)">
+  <div class="mono" style="color:var(--amber);letter-spacing:4px;font-size:12px">BANDEIRADA</div>
+  <h1 id="resTitle" style="font-size:48px">VENCEDOR</h1><div class="bar"></div>
+  <table id="resTable"></table>
+  <div class="btns"><button id="again">CORRER DE NOVO</button><button class="ghost" id="resMenu">MENU</button></div></div></div>
+
+<div id="touch"><div class="tb" data-k="left" style="left:16px">◀</div><div class="tb" data-k="right" style="left:102px">▶</div>
+  <div class="tb" data-k="hb" style="right:188px;font-size:13px">FREIO<br>MÃO</div><div class="tb" data-k="brake" style="right:102px">▼</div><div class="tb" data-k="gas" style="right:16px">▲</div></div>
+
+<script src="game.js"></script>
+</body>
+</html>
