@@ -381,7 +381,7 @@ function buildStatic() {
 // ---------------------------------------------------------------- partículas
 const smoke = [], sparks = [], WIND = [0.9, -0.55];
 function emitSmoke(x, y, vx, vy, k) {
-  if (smoke.length > 650) smoke.shift();
+  if (smoke.length > (MOBILE ? 320 : 650)) smoke.shift();
   smoke.push({ x, y, vx: vx * .18 + (Math.random() - .5) * .8, vy: vy * .18 + (Math.random() - .5) * .8, r: .5 + Math.random() * .4, a: .16 + k * .22, age: 0, life: 4 + Math.random() * 2.5 });
 }
 function emitSparks(x, y, nx, ny, n) {
@@ -406,25 +406,47 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => { keys[e.code] = 0; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = 0; if (state.phase === 'race') pause(true); });
-const touch = { left: 0, right: 0, gas: 0, brake: 0, hb: 0 };
-if ('ontouchstart' in window) {
-  $('touch').style.display = 'block';
-  document.querySelectorAll('#touch .tb').forEach(b => {
-    const k = b.dataset.k;
-    const on = e => { e.preventDefault(); touch[k] = 1; b.classList.add('on'); };
-    const off = e => { e.preventDefault(); touch[k] = 0; b.classList.remove('on'); };
-    b.addEventListener('touchstart', on); b.addEventListener('touchend', off); b.addEventListener('touchcancel', off);
+// ---------------- modo celular: volante analógico (arrastar) + pedais multitoque
+const MOBILE = matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window && Math.min(screen.width, screen.height) < 900);
+const touch = { steer: 0, gas: 0, brake: 0, hb: 0 };
+if (MOBILE) {
+  document.body.classList.add('mobile');
+  $('b1').textContent = 'JOGAR';
+  addEventListener('contextmenu', e => e.preventDefault());
+  const zone = $('steerZone'), knob = $('steerKnob');
+  let sid = null, x0 = 0;
+  const setSteer = v => { touch.steer = v; knob.style.transform = `translateX(${v * (zone.querySelector('#steerTrack').clientWidth / 2 - 34)}px)`; };
+  zone.addEventListener('pointerdown', e => { e.preventDefault(); sid = e.pointerId; x0 = e.clientX; try { zone.setPointerCapture(sid); } catch (_) {} setSteer(0); Audio.init(); });
+  zone.addEventListener('pointermove', e => { if (e.pointerId === sid) setSteer(clamp((e.clientX - x0) / 70, -1, 1)); });
+  const endS = e => { if (e.pointerId === sid) { sid = null; setSteer(0); } };
+  zone.addEventListener('pointerup', endS); zone.addEventListener('pointercancel', endS);
+  document.querySelectorAll('.pedal').forEach(el => {
+    const k = el.dataset.k;
+    const on = e => { e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch (_) {} touch[k] = 1; el.classList.add('on'); if (navigator.vibrate && k === 'hb') navigator.vibrate(12); };
+    const off = () => { touch[k] = 0; el.classList.remove('on'); };
+    el.addEventListener('pointerdown', on); el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('lostpointercapture', off);
   });
+  $('pauseBtn').addEventListener('click', () => { if (state.phase === 'race' || state.phase === 'count') pause(true); });
 }
+const vibrate = ms => { if (MOBILE && navigator.vibrate) navigator.vibrate(ms | 0); };
 function readInputs() {
   state.cars.forEach(c => { for (const k in c.input) c.input[k] = 0; });
   for (const code in CODES) if (keys[code]) { const [p, k] = CODES[code]; if (state.cars[p]) state.cars[p].input[k] = 1; }
-  if (state.cars[0]) for (const k in touch) if (touch[k]) state.cars[0].input[k] = 1;
+  const c0 = state.cars[0];
+  if (c0 && MOBILE) {
+    c0.input.right = Math.max(c0.input.right, Math.max(0, touch.steer)); c0.input.left = Math.max(c0.input.left, Math.max(0, -touch.steer));
+    for (const k of ['gas', 'brake', 'hb']) if (touch[k]) c0.input[k] = 1;
+  }
 }
 function msg(text, dur = 1.4) { $('msg').textContent = text; $('msg').style.opacity = 1; state.msgT = dur; }
 function fmt(t) { if (t == null) return '—'; const m = Math.floor(t / 60), s = t - m * 60; return `${m}:${s.toFixed(3).padStart(6, '0')}`; }
 function startRace(mode) {
   Audio.init();
+  if (MOBILE) {
+    mode = 1; document.body.classList.add('playing');
+    const de = document.documentElement;
+    if (de.requestFullscreen && !document.fullscreenElement) de.requestFullscreen({ navigationUI: 'hide' }).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {});
+  }
   state.mode = mode; state.phase = 'count'; state.countdown = 0; state.raceT = 0; state.finishers = [];
   smoke.length = 0; sparks.length = 0;
   skidCtx.save(); skidCtx.setTransform(1, 0, 0, 1, 0, 0); skidCtx.clearRect(0, 0, skidCv.width, skidCv.height); skidCtx.restore();
@@ -445,7 +467,7 @@ function pause(on) {
   else { state.phase = state.prevPhase; $('pause').classList.add('hidden'); }
 }
 function toMenu() {
-  state.phase = 'menu'; state.cars = [];
+  state.phase = 'menu'; state.cars = []; document.body.classList.remove('playing');
   ['pause', 'results'].forEach(id => $(id).classList.add('hidden')); $('menu').classList.remove('hidden');
   $('hud1').style.display = $('hud2').style.display = 'none'; $('timer').style.display = 'none'; $('lights').style.display = 'none';
 }
@@ -491,7 +513,7 @@ function wallCollide(c) {
   const jt = clamp(vt / (1 / M + rt * rt / IZ_HIT), -.25 * j, .25 * j);
   c.impulse(px, py, -jt * tx, -jt * ty, IZ_HIT);
   if (vn > 3) c.impactT = .45;
-  if (vn > 2.5) { emitSparks(px, py, -nx, -ny, Math.min(24, vn * 2) | 0); Audio.hit(vn); state.shake = Math.min(1, vn / 14); }
+  if (vn > 2.5) { emitSparks(px, py, -nx, -ny, Math.min(24, vn * 2) | 0); Audio.hit(vn); vibrate(Math.min(70, vn * 6)); state.shake = Math.min(1, vn / 14); }
 }
 function obb(c) {
   const co = Math.cos(c.h), si = Math.sin(c.h);
@@ -524,7 +546,7 @@ function carCollide(a, b) {
   const jt = clamp(-vt / (2 / M), -.2 * j, .2 * j);
   a.impulse(cp[0], cp[1], -jt * tx, -jt * ty, IH); b.impulse(cp[0], cp[1], jt * tx, jt * ty, IH);
   if (-vn > 3) { a.impactT = b.impactT = .35; }
-  if (-vn > 1.5) { emitSparks(cp[0], cp[1], nx, ny, Math.min(30, -vn * 3) | 0); Audio.hit(-vn); state.shake = Math.min(1, -vn / 12); }
+  if (-vn > 1.5) { emitSparks(cp[0], cp[1], nx, ny, Math.min(30, -vn * 3) | 0); Audio.hit(-vn); vibrate(Math.min(80, -vn * 7)); state.shake = Math.min(1, -vn / 12); }
 }
 function track(c, dt) {
   const n = nearest(T, c.x, c.y, c.si, 10);
@@ -639,12 +661,12 @@ function render() {
   ctx.fillStyle = '#0d0b09'; ctx.fillRect(0, 0, cv.width, cv.height);
   if (!T) return;
   // câmera
-  const TOP = VW > 700 ? 92 : 70;
+  const TOP = MOBILE ? 0 : VW > 700 ? 92 : 70;
   const fitZ = Math.min(VW / (T.W - T.minX + 2), (VH - TOP) / (T.H + 2));
   let tx, ty, tz;
   const chase = state.mode === 1 && state.chase && state.cars[0];
   if (chase) {
-    const c = state.cars[0]; tz = Math.max(fitZ * 2.3, Math.min(VW, VH) / 52);
+    const c = state.cars[0]; tz = Math.max(fitZ * 2.3, Math.min(VW, VH) / (MOBILE ? 36 : 52));
     tx = c.x + c.vx * .55; ty = c.y + c.vy * .55;
     const hw = VW / 2 / tz, hh = (VH - TOP) / 2 / tz;
     tx = T.W - T.minX > 2 * hw ? clamp(tx, T.minX + hw, T.W - hw) : (T.W + T.minX) / 2;
