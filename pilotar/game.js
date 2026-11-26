@@ -100,8 +100,9 @@ function nearest(T, px, py, i0, win) {
 }
 
 // ---------------------------------------------------------------- física do carro
-const M = 1450, IZ = 2550, A = 1.45, B = 1.0, HCG = 0.45, G = 9.81, MU = 1.25;
-const CF = 90000, CR = 105000, POWER = 290000, FMAX = 12500, DRAG = 0.55, ROLL = 30;
+const M = 1450, IZ = 2600, A = 1.35, B = 1.10, HCG = 0.42, G = 9.81, MU = 1.3;
+const CF = 100000, CR = 170000, POWER = 290000, FMAX = 12500, DRAG = 0.55, ROLL = 30;
+const ESC_K = 3.5, IZ_HIT = IZ * 3;                          // controle de estabilidade; inércia efetiva nas batidas
 const HL = 2.25, HW = 0.95;                                   // meia-caixa de colisão
 const GEARS = [13, 20, 27, 34, 41, 49, 60];                   // velocidade (m/s) a 9000 rpm
 class Car {
@@ -110,7 +111,7 @@ class Car {
     this.steer = 0; this.thr = 0; this.ax = 0; this.si = 0; this.lap = 0; this.half = false;
     this.lapStart = 0; this.best = null; this.laps = []; this.done = false; this.finish = 0;
     this.gear = 1; this.rpm = 1200; this.slip = 0; this.braking = false; this.reverse = false;
-    this.pop = 0; this.popT = 0; this.wrong = 0; this.prevS = 0; this.stuck = 0;
+    this.pop = 0; this.popT = 0; this.wrong = 0; this.driftT = 0; this.impactT = 0; this.prevS = 0; this.stuck = 0;
     this.input = { gas: 0, brake: 0, left: 0, right: 0, hb: 0 };
     this.rw = [null, null];                                  // última posição das rodas traseiras (marcas)
   }
@@ -119,59 +120,83 @@ class Car {
   step(dt, locked) {
     const inp = this.input, c = Math.cos(this.h), s = Math.sin(this.h);
     let vx = this.vx * c + this.vy * s, vy = -this.vx * s + this.vy * c;
-    const spd = Math.hypot(vx, vy);
-    // direção: rampa suave e esterço máximo que cai com a velocidade
-    const target = (inp.right - inp.left);
-    const rate = target === 0 ? 6 : (Math.sign(target) !== Math.sign(this.steer) ? 7 : 3.2);
+    const spd = Math.hypot(vx, vy), Lw = A + B, W = M * G;
+    const hb = !!inp.hb && !locked;
+    this.driftT = hb && spd > 4 ? 1.1 : Math.max(0, (this.driftT || 0) - dt);
+    const drift = this.driftT > 0;
+    // direção: rampa (mais rápida devagar), esterço máximo cai com a velocidade
+    const target = inp.right - inp.left;
+    const back = target === 0 || Math.sign(target) !== Math.sign(this.steer);
+    const rate = back ? 7 : 2.4 + 2.6 / (1 + spd / 8);
     this.steer += clamp(target - this.steer, -rate * dt, rate * dt);
-    const dmax = 0.58 / (1 + spd / 15) + 0.07;
-    const delta = this.steer * dmax;
-    this.thr += clamp(inp.gas - this.thr, -6 * dt, 4 * dt);
-    if (locked) { this.thr = 0; }
-    // cargas com transferência longitudinal
-    const Lw = A + B, W = M * G;
-    const Fzf = Math.max(0.25 * W, W * B / Lw - M * this.ax * HCG / Lw);
-    const Fzr = Math.max(0.25 * W, W * A / Lw + M * this.ax * HCG / Lw);
+    // esterço máximo: nunca pede mais do que ~1,1 g de curva (ajuste por velocidade, como num volante real)
+    const dmax = Math.min(0.5 / (1 + spd / 9) + 0.04, 1.1 * MU * G * Lw / Math.max(spd * spd, 1));
+    const beta = spd > 3 ? Math.atan2(vy, Math.abs(vx)) : 0;
+    let delta = this.steer * dmax;
+    if (drift && Math.abs(beta) > .08) delta = clamp(delta + beta * .4, -.6, .6);   // ajuda de contraesterço no drift
+    this.thr += clamp((locked ? 0 : inp.gas) - this.thr, -8 * dt, 3 * dt);
+    // cargas com transferência longitudinal (aceleração filtrada)
+    const Fzf = Math.max(0.3 * W, W * B / Lw - M * this.ax * HCG / Lw);
+    const Fzr = Math.max(0.3 * W, W * A / Lw + M * this.ax * HCG / Lw);
+    const capF = MU * Fzf, capR = MU * Fzr;
     // longitudinal
     let Fxf = 0, Fxr = 0, drive = 0;
     this.braking = false; this.reverse = false;
     if (!locked) {
       if (this.thr > 0) drive = this.thr * Math.min(FMAX, POWER / Math.max(vx, 4));
       if (inp.brake) {
-        if (vx > 0.8) { const bf = inp.brake * W * 1.1; Fxf -= bf * 0.62; Fxr -= bf * 0.38; this.braking = true; }
-        else { drive = -inp.brake * 4600; this.reverse = vx < 0.2; }
+        if (vx > 0.8) { const bf = inp.brake * W * 1.15; Fxf -= bf * .72; Fxr -= Math.min(bf * .28, capR * .55); this.braking = true; }   // ABS: traseira nunca trava
+        else if (!inp.gas) { drive = -inp.brake * 4200; this.reverse = vx < 0.2; }
       }
-    } else if (spd > 0.05) { Fxf -= Math.sign(vx) * W * 0.6; }
+    } else if (spd > 0.05) Fxf -= Math.sign(vx) * W * .8;
+    // controle de tração: corta potência se a traseira começa a escorregar
+    // usa só o que sobra do círculo de atrito depois da força lateral que a traseira já faz
+    const ar0 = Math.atan2(vy - this.r * B, Math.max(Math.abs(vx), 2));
+    let budget = Math.sqrt(Math.max(0, capR * capR - (this.fyr || 0) ** 2)) * (drift ? .95 : .9);
+    if (!drift && Math.abs(ar0) > .09) budget *= clamp(1 - (Math.abs(ar0) - .09) * 5, .2, 1);
+    if (drive > 0) drive = Math.min(drive, budget);
     Fxr += drive;
-    const hb = inp.hb && !locked;
-    const capR = MU * Fzr;
-    if (hb) Fxr = -Math.sign(vx) * Math.min(Math.abs(vx) * M * 4, capR * 0.85);
-    else Fxr = clamp(Fxr, -capR * 0.98, capR * 0.82);
-    const capF = MU * Fzf;
-    Fxf = clamp(Fxf, -capF * 0.98, capF * 0.98);
-    // ângulos de deriva
-    const vxa = Math.max(Math.abs(vx), 1.5), sg = vx >= -0.2 ? 1 : -1;
+    if (hb) Fxr = -Math.sign(vx) * Math.min(Math.abs(vx) * M * 3, capR * .8);
+    Fxr = clamp(Fxr, -capR * .95, capR * .95); Fxf = clamp(Fxf, -capF * .95, capF * .95);
+    // pneus: ângulo de deriva + círculo de atrito
+    const vxa = Math.max(Math.abs(vx), 2), sg = vx >= -0.2 ? 1 : -1;
     const af = Math.atan2(vy + this.r * A, vxa) - delta * sg;
     const ar = Math.atan2(vy - this.r * B, vxa);
     const latF = Math.sqrt(Math.max(0, capF * capF - Fxf * Fxf));
-    const latR = hb ? capR * 0.4 : Math.sqrt(Math.max(0, capR * capR - Fxr * Fxr));
+    const latR = hb ? capR * .3 : Math.sqrt(Math.max(0, capR * capR - Fxr * Fxr)) * (drift && this.thr > .5 ? .88 : 1);
     const Fyf = -latF * Math.tanh(CF * af / Math.max(latF, 1));
     const Fyr = -latR * Math.tanh(CR * ar / Math.max(latR, 1));
+    this.fyr = Fyr;
     const cd = Math.cos(delta), sd = Math.sin(delta);
     const fx = Fxr + Fxf * cd - Fyf * sd - DRAG * vx * Math.abs(vx) - ROLL * vx;
     const fy = Fyr + Fxf * sd + Fyf * cd - 40 * vy;
-    const tq = A * (Fyf * cd + Fxf * sd) - B * Fyr;
-    this.ax = fx / M;
-    vx += (fx / M + vy * this.r) * dt;
-    vy += (fy / M - vx * this.r) * dt;
+    let tq = A * (Fyf * cd + Fxf * sd) - B * Fyr;
+    // ESC: aproxima a guinada da que o volante pede (fraco durante o drift)
+    if (!locked && spd > 3) {
+      const lim = .92 * MU * G / Math.max(spd, 1);
+      const rT = clamp(vx * Math.tan(delta) / Lw, -lim, lim);
+      // no drift: girando para o mesmo lado o carro solta; contraesterçando ele segura o ângulo
+      const counter = Math.abs(this.steer) > .3 && Math.sign(this.steer) !== Math.sign(this.r);
+      tq -= (this.r - rT) * IZ * (hb ? 0 : drift ? (counter ? 2.4 : .5) : ESC_K);
+    }
+    if (this.impactT > 0) { tq -= this.r * IZ * 3; this.impactT -= dt; }
+    this.ax += (fx / M - this.ax) * Math.min(1, dt * 10);
+    // a velocidade fica guardada no referencial do mundo: a rotação do carro já é levada em conta
+    // ao reprojetar a velocidade na nova direção no próximo passo (sem somar o termo de Coriolis de novo)
+    vx += fx / M * dt; vy += fy / M * dt;
     this.r += tq / IZ * dt;
-    if (spd < 0.6 && !this.thr && !inp.brake) { vx *= 0.94; vy *= 0.85; this.r *= 0.85; }
+    // baixa velocidade: comportamento cinemático (sem patinar parado)
+    if (spd < 2.5) {
+      const k = Math.min(1, dt * 10 * (1 - spd / 2.5));
+      vy -= vy * k; this.r += (vx * Math.tan(delta) / Lw - this.r) * k;
+      if (!this.thr && !inp.brake && spd < .5) vx *= .94;
+    }
     this.vx = vx * c - vy * s; this.vy = vx * s + vy * c;
     this.x += this.vx * dt; this.y += this.vy * dt; this.h += this.r * dt;
     // escorregamento (fumaça/marcas/som)
-    const wheelspin = !hb && drive > capR * 0.7 && vx < 18 ? 0.5 : 0;
-    this.slip = Math.max(Math.abs(ar) > 0.1 ? Math.min(1, (Math.abs(ar) - 0.1) * 3) : 0,
-      hb && spd > 3 ? 0.8 : 0, wheelspin, this.braking && inp.brake && spd > 12 && Math.abs(Fxr) > capR * .9 ? .3 : 0) * (spd > 2 ? 1 : 0);
+    const wheelspin = !hb && drive > capR * .45 && vx < 10 ? .35 : 0;
+    this.slip = Math.max(Math.abs(ar) > .09 ? Math.min(1, (Math.abs(ar) - .09) * 3.5) : 0,
+      hb && spd > 3 ? .8 : 0, wheelspin) * (spd > 2 ? 1 : 0);
     // câmbio e rotação
     const v = Math.max(0, vx);
     if (this.reverse || vx < -0.3) { this.gear = -1; }
@@ -193,9 +218,9 @@ class Car {
       out.push([this.x + a * c - b * s, this.y + a * s + b * c]);
     return out;
   }
-  impulse(px, py, jx, jy) {
+  impulse(px, py, jx, jy, iz = IZ) {
     this.vx += jx / M; this.vy += jy / M;
-    this.r += ((px - this.x) * jy - (py - this.y) * jx) / IZ;
+    this.r += ((px - this.x) * jy - (py - this.y) * jx) / iz;
   }
   pointVel(px, py) {
     const rx = px - this.x, ry = py - this.y;
@@ -467,11 +492,12 @@ function wallCollide(c) {
   const [vpx, vpy] = c.pointVel(px, py), vn = vpx * nx + vpy * ny;
   if (vn <= 0) return;
   const rx = px - c.x, ry = py - c.y, rn = rx * ny - ry * nx;
-  const j = (1 + .25) * vn / (1 / M + rn * rn / IZ);
-  c.impulse(px, py, -j * nx, -j * ny);
+  const j = (1 + .12) * vn / (1 / M + rn * rn / IZ_HIT);
+  c.impulse(px, py, -j * nx, -j * ny, IZ_HIT);
   const tx = -ny, ty = nx, vt = vpx * tx + vpy * ty, rt = rx * ty - ry * tx;
-  const jt = clamp(vt / (1 / M + rt * rt / IZ), -.45 * j, .45 * j);
-  c.impulse(px, py, -jt * tx, -jt * ty);
+  const jt = clamp(vt / (1 / M + rt * rt / IZ_HIT), -.25 * j, .25 * j);
+  c.impulse(px, py, -jt * tx, -jt * ty, IZ_HIT);
+  if (vn > 3) c.impactT = .45;
   if (vn > 2.5) { emitSparks(px, py, -nx, -ny, Math.min(24, vn * 2) | 0); Audio.hit(vn); state.shake = Math.min(1, vn / 14); }
 }
 function obb(c) {
@@ -499,11 +525,12 @@ function carCollide(a, b) {
   const rvx = vb[0] - va[0], rvy = vb[1] - va[1], vn = rvx * nx + rvy * ny;
   if (vn >= 0) return;
   const ra = (cp[0] - a.x) * ny - (cp[1] - a.y) * nx, rb = (cp[0] - b.x) * ny - (cp[1] - b.y) * nx;
-  const j = -(1 + .3) * vn / (2 / M + ra * ra / IZ + rb * rb / IZ);
-  a.impulse(cp[0], cp[1], -j * nx, -j * ny); b.impulse(cp[0], cp[1], j * nx, j * ny);
+  const IH = IZ * 2.5, j = -(1 + .15) * vn / (2 / M + ra * ra / IH + rb * rb / IH);
+  a.impulse(cp[0], cp[1], -j * nx, -j * ny, IH); b.impulse(cp[0], cp[1], j * nx, j * ny, IH);
   const tx = -ny, ty = nx, vt = rvx * tx + rvy * ty;
-  const jt = clamp(-vt / (2 / M), -.3 * j, .3 * j);
-  a.impulse(cp[0], cp[1], -jt * tx, -jt * ty); b.impulse(cp[0], cp[1], jt * tx, jt * ty);
+  const jt = clamp(-vt / (2 / M), -.2 * j, .2 * j);
+  a.impulse(cp[0], cp[1], -jt * tx, -jt * ty, IH); b.impulse(cp[0], cp[1], jt * tx, jt * ty, IH);
+  if (-vn > 3) { a.impactT = b.impactT = .35; }
   if (-vn > 1.5) { emitSparks(cp[0], cp[1], nx, ny, Math.min(30, -vn * 3) | 0); Audio.hit(-vn); state.shake = Math.min(1, -vn / 12); }
 }
 function track(c, dt) {
@@ -725,7 +752,7 @@ loadData().then(data => {
   buildStatic();
   $('dataInfo').textContent = data.demo ? 'Usando dados de exemplo (contribuições indisponíveis)' :
     `${data.total != null ? data.total + ' contribuições no último ano · ' : ''}atualizado ${data.updated || ''}`;
-  window.__pilotar = { state, T, Car };
+  window.__pilotar = { state, T, Car, wallCollide, carCollide, nearest };
 });
 requestAnimationFrame(frame);
 })();
